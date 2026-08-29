@@ -331,9 +331,10 @@ function renderStandings(data) {
   const head = document.getElementById("standingsHead");
   const banner = document.getElementById("standingsBanner");
 
-  // Team List mode: just show the teams (no heading/banner/bracket).
+  // Team List mode: show a "Teams" heading (no tournament banner/bracket).
   if (STANDINGS_STYLE === "teams") {
-    if (head) head.style.display = "none";
+    if (head) head.style.display = "";
+    if (title) title.textContent = "Teams";
     if (banner) banner.style.display = "none";
     if (koSection) koSection.style.display = "block";
     renderTeamList();
