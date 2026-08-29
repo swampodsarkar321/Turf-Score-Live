@@ -561,16 +561,19 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ---- live viewer counter (presence) ------------------------------------
-// Each visitor registers a presence node on connect; it is auto-removed on
-// disconnect, so the count reflects people viewing right now.
+// "watching" = people on the site right now (presence, auto-removed on
+// disconnect). "views" = cumulative total visits, which only ever grows.
 function initViewers() {
-  const el = document.getElementById("viewerCount");
+  const watchingEl = document.getElementById("viewerCount");
+  const totalEl = document.getElementById("totalViews");
   const viewersRef = db.ref("siteViewers");
-  viewersRef.on("value", (snap) => {
-    if (el) el.textContent = snap.numChildren();
-  });
+  const totalRef = db.ref("siteStats/totalViews");
 
-  const register = () => {
+  viewersRef.on("value", (snap) => { if (watchingEl) watchingEl.textContent = snap.numChildren(); });
+  totalRef.on("value", (snap) => { if (totalEl) totalEl.textContent = snap.val() || 0; });
+
+  const afterAuth = () => {
+    // Live presence: register on connect, remove on disconnect.
     db.ref(".info/connected").on("value", (snap) => {
       if (snap.val() === true) {
         const myRef = viewersRef.push();
@@ -578,21 +581,21 @@ function initViewers() {
         myRef.set(true);
       }
     });
+    // Cumulative total views: +1 per page load (keeps increasing).
+    totalRef.transaction((v) => (v || 0) + 1).catch(() => {});
   };
 
-  // Anonymous auth lets unauthenticated visitors write presence
-  // (DB rules only allow writes when auth != null).
+  // Anonymous auth lets unauthenticated visitors write (DB rules require auth).
   try {
     const fbAuth = (typeof auth !== "undefined" && auth) || (window.firebase && firebase.auth());
     if (fbAuth) {
-      if (fbAuth.currentUser) register();
-      else if (fbAuth.signInAnonymously) {
-        fbAuth.signInAnonymously().then(register).catch(() => register());
-      } else register();
+      if (fbAuth.currentUser) afterAuth();
+      else if (fbAuth.signInAnonymously) fbAuth.signInAnonymously().then(afterAuth).catch(afterAuth);
+      else afterAuth();
     } else {
-      register();
+      afterAuth();
     }
   } catch (e) {
-    register();
+    afterAuth();
   }
 }
