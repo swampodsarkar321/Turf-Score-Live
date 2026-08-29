@@ -59,6 +59,10 @@ function statusBadge(status) {
   return `<span class="badge ${cls}">${label}</span>`;
 }
 
+function stageBadge(stage) {
+  return stage ? `<span class="badge stage">${esc(stage)}</span> ` : "";
+}
+
 function logoFromTournament(t) {
   // Header logo (next to tournament name)
   const header = document.getElementById("tourLogo");
@@ -181,6 +185,7 @@ function subscribeMatchEvents(matchId) {
 function renderAll() {
   renderLiveNow();
   renderUpcoming();
+  renderKnockout();
   renderFinished();
 }
 
@@ -198,10 +203,11 @@ function renderLiveNow() {
   const m = live[0];
   const elapsed = Timer.computeElapsed(m.timer);
   box.innerHTML = `
-    <div class="card live-now">
-      <div style="text-align:center; margin-bottom:12px;">
-        <span class="live-badge"><span class="live-dot"></span> LIVE NOW</span>
-      </div>
+      <div class="card live-now">
+        <div style="text-align:center; margin-bottom:12px;">
+          <span class="live-badge"><span class="live-dot"></span> LIVE NOW</span>
+        </div>
+        ${m.stage ? `<div style="text-align:center; margin-bottom:10px;">${stageBadge(m.stage)}</div>` : ""}
       <a class="match-row" href="match.html?m=${m.id}" style="text-decoration:none; color:inherit; display:flex;">
         <div class="team-side">
           ${teamImg(m.teamA, "")}
@@ -241,9 +247,38 @@ function renderUpcoming() {
           <div class="row">${teamImg(m.teamB, "")}<span class="tname">${esc(teamName(m.teamB))}</span></div>
         </div>
         <div class="meta">
-          ${statusBadge(m.status)}<br/>
+          ${stageBadge(m.stage)} ${statusBadge(m.status)}<br/>
           <span>${esc(m.matchNumber ? "#" + m.matchNumber + " " : "")}${when}</span><br/>
           <span>${esc(m.venue || "")}</span>
+        </div>
+      </a>`;
+    })
+    .join("");
+}
+
+function renderKnockout() {
+  const box = document.getElementById("knockoutBox");
+  const list = matchList()
+    .filter((m) => m.stage) // only knockout rounds (Quarter/Semi/Final/3rd)
+    .sort((a, b) => (a.scheduledTime || 0) - (b.scheduledTime || 0));
+  if (list.length === 0) {
+    box.innerHTML = `<div class="empty">No knockout matches yet.</div>`;
+    return;
+  }
+  box.innerHTML = list
+    .map((m) => {
+      const when = m.scheduledTime ? `${formatDate(m.scheduledTime)} · ${formatTime(m.scheduledTime)}` : "TBD";
+      const finished = m.status === "Finished";
+      return `
+      <a class="match-item" href="match.html?m=${m.id}" style="text-decoration:none; color:inherit;">
+        <div class="teams">
+          <div class="row">${teamImg(m.teamA, "")}<span class="tname">${esc(teamName(m.teamA))}</span></div>
+          <div class="row">${teamImg(m.teamB, "")}<span class="tname">${esc(teamName(m.teamB))}</span></div>
+        </div>
+        <div class="meta">
+          ${stageBadge(m.stage)} ${statusBadge(m.status)}<br/>
+          <span>${esc(m.matchNumber ? "#" + m.matchNumber + " " : "")}${when}</span><br/>
+          <span>${finished ? `<b>${m.scoreA || 0} - ${m.scoreB || 0}</b>` : esc(m.venue || "")}</span>
         </div>
       </a>`;
     })
@@ -267,7 +302,7 @@ function renderFinished() {
           <div class="row">${teamImg(m.teamB, "")}<span class="tname">${esc(teamName(m.teamB))}</span></div>
         </div>
         <div class="meta">
-          ${statusBadge(m.status)}<br/>
+          ${stageBadge(m.stage)} ${statusBadge(m.status)}<br/>
           <span style="font-size:1.1rem; font-weight:800;">${m.scoreA || 0} - ${m.scoreB || 0}</span>
         </div>
       </a>`)

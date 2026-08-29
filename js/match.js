@@ -56,8 +56,9 @@ document.addEventListener("DOMContentLoaded", () => {
   db.ref("matches/" + MATCH_ID).on("value", (snap) => {
     matchData = snap.val() || {};
     myTournament = matchData.tournamentId;
+    const stageTxt = matchData.stage ? matchData.stage + " · " : "";
     document.getElementById("matchTitle").textContent =
-      teamName(matchData.teamA) + " vs " + teamName(matchData.teamB);
+      stageTxt + teamName(matchData.teamA) + " vs " + teamName(matchData.teamB);
     renderMatch();
     renderControl();
   });
@@ -76,10 +77,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggle = document.getElementById("adminToggle");
     if (isAdmin) {
       panel.style.display = "block";
-      if (toggle) { toggle.textContent = "Dashboard"; toggle.href = "admin.html"; }
+      toggle.textContent = "Dashboard";
+      toggle.href = "admin.html";
     } else {
       panel.style.display = "none";
-      if (toggle) { toggle.textContent = "Admin"; toggle.href = "login.html"; }
+      toggle.textContent = "Admin";
+      toggle.href = "login.html";
     }
   });
 
@@ -108,7 +111,8 @@ function renderMatch() {
   } else {
     badge.innerHTML = "";
   }
-  document.getElementById("bigStatus").textContent = matchData.status || "Scheduled";
+  document.getElementById("bigStatus").textContent =
+    (matchData.stage ? matchData.stage + " · " : "") + (matchData.status || "Scheduled");
 }
 
 function renderClocks() {
