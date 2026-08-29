@@ -60,11 +60,27 @@ function statusBadge(status) {
 }
 
 function logoFromTournament(t) {
+  // Header logo (next to tournament name)
+  const header = document.getElementById("tourLogo");
   if (t && t.logo) {
-    document.getElementById("tourLogo").src = t.logo;
-    document.getElementById("tourLogo").style.display = "block";
+    header.src = t.logo;
+    header.style.display = "block";
   } else {
-    document.getElementById("tourLogo").style.display = "none";
+    header.style.display = "none";
+  }
+
+  // Standings banner (logo + name above the standings table)
+  const banner = document.getElementById("standingsBanner");
+  if (banner) {
+    if (t && (t.logo || t.name)) {
+      banner.style.display = "flex";
+      document.getElementById("standTourName").textContent = t.name || "Tournament";
+      const sLogo = document.getElementById("standLogo");
+      if (t.logo) { sLogo.src = t.logo; sLogo.style.display = "block"; }
+      else sLogo.style.display = "none";
+    } else {
+      banner.style.display = "none";
+    }
   }
 }
 

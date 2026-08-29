@@ -40,6 +40,13 @@
     <!-- ===== Standings ===== -->
     <section class="section" id="standingsSection">
       <div class="section-head"><span class="bar"></span><h2>Standings</h2></div>
+      <div class="card" id="standingsBanner" style="display:none; flex-direction:row; align-items:center; gap:12px; margin-bottom:14px;">
+        <img id="standLogo" src="" style="width:44px; height:44px; border-radius:12px; object-fit:cover; display:none;" />
+        <div>
+          <div style="font-weight:700;" id="standTourName"></div>
+          <div style="color:var(--muted); font-size:.78rem;">Tournament Standings</div>
+        </div>
+      </div>
       <div class="table-wrap"><div id="standingsBox"><div class="loading">Loading…</div></div></div>
     </section>
 
