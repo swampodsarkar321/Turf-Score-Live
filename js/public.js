@@ -325,6 +325,14 @@ function renderStandings(data) {
   const koSection = document.getElementById("knockoutSection");
   const title = document.getElementById("standingsTitle");
 
+  // Team List mode: just show the teams (no points/bracket).
+  if (STANDINGS_STYLE === "teams") {
+    if (title) title.textContent = "Teams";
+    if (koSection) koSection.style.display = "block";
+    renderTeamList();
+    return;
+  }
+
   // Knockout Bracket mode: render the bracket instead of the points table,
   // and hide the separate Knockout Stage list (it would be redundant).
   if (STANDINGS_STYLE === "knockout") {
@@ -401,6 +409,40 @@ function renderStandings(data) {
       html += `<h3 style="margin:18px 0 8px; font-size:.95rem; color:var(--accent); letter-spacing:.5px;">${esc(g)}</h3>`;
     }
     html += tableHTML(groups[g]);
+  });
+  box.innerHTML = html;
+}
+
+// Team List view (used when the tournament's Standings Display = Teams).
+function renderTeamList() {
+  const box = document.getElementById("standingsBox");
+  const rows = Object.keys(teamsMap).map((k) => ({ id: k, ...teamsMap[k] }));
+  if (rows.length === 0) {
+    box.innerHTML = `<div class="empty">No teams yet.</div>`;
+    return;
+  }
+
+  // Group by group name if teams have one.
+  const groups = {};
+  rows.forEach((r) => { const g = r.group || ""; (groups[g] = groups[g] || []).push(r); });
+  const names = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+  const onlyUngrouped = names.length === 1 && names[0] === "";
+
+  let html = "";
+  names.forEach((g) => {
+    if (!onlyUngrouped) {
+      html += `<h3 style="margin:16px 0 8px; font-size:.95rem; color:var(--accent); letter-spacing:.5px;">${esc(g)}</h3>`;
+    }
+    html += `<div class="card-list">` + groups[g].map((r) => {
+      const logo = r.logo
+        ? `<img src="${esc(r.logo)}" alt="" />`
+        : `<img src="${placeholderLogo(r.name)}" alt="" />`;
+      return `
+        <div class="mini-card">
+          <div class="head">${logo}<b>${esc(r.name)}</b></div>
+          <div class="sub">${(r.players || []).length} player(s)</div>
+        </div>`;
+    }).join("") + `</div>`;
   });
   box.innerHTML = html;
 }
