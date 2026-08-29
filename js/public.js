@@ -325,10 +325,13 @@ function renderStandings(data) {
   const box = document.getElementById("standingsBox");
   const koSection = document.getElementById("knockoutSection");
   const title = document.getElementById("standingsTitle");
+  const head = document.getElementById("standingsHead");
+  const banner = document.getElementById("standingsBanner");
 
-  // Team List mode: just show the teams (no points/bracket).
+  // Team List mode: just show the teams (no heading/banner/bracket).
   if (STANDINGS_STYLE === "teams") {
-    if (title) title.textContent = "Teams";
+    if (head) head.style.display = "none";
+    if (banner) banner.style.display = "none";
     if (koSection) koSection.style.display = "block";
     renderTeamList();
     return;
@@ -337,12 +340,15 @@ function renderStandings(data) {
   // Knockout Bracket mode: render the bracket instead of the points table,
   // and hide the separate Knockout Stage list (it would be redundant).
   if (STANDINGS_STYLE === "knockout") {
+    if (head) head.style.display = "none";
+    if (banner) banner.style.display = "none";
     if (title) title.textContent = "Knockout Bracket";
     if (koSection) koSection.style.display = "none";
     renderKnockoutBracket();
     return;
   }
 
+  if (head) head.style.display = "";
   if (title) title.textContent = "Standings";
   if (koSection) koSection.style.display = "block";
 
