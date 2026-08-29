@@ -18,6 +18,7 @@ let matchesMap = {};    // matchId -> match object
 let recentEvents = {};  // matchId -> [ {..., matchId} ]
 let subscribedEvents = {}; // matchId -> bool (so we only attach once)
 let STANDINGS_STYLE = "points"; // "points" (group table) or "knockout" (bracket)
+let lastStandings = {};         // last standings payload (for re-render on team load)
 
 const EVENT_ICON = {
   Goal: "⚽", "Yellow Card": "🟨", "Red Card": "🟥",
@@ -148,6 +149,7 @@ function loadTournament(tid) {
 
       STANDINGS_STYLE = t.standingsStyle || "points";
       logoFromTournament(t);
+      renderStandings(lastStandings); // re-render in case style switched
     });
 
   subscribeMatches(tid);
@@ -190,6 +192,7 @@ function renderAll() {
   renderUpcoming();
   renderKnockout();
   renderFinished();
+  renderStandings(lastStandings);
 }
 
 function matchList() {
@@ -316,8 +319,8 @@ function renderFinished() {
 
 function subscribeStandings(tid) {
   db.ref("standings/" + tid).on("value", (snap) => {
-    const data = snap.val() || {};
-    renderStandings(data);
+    lastStandings = snap.val() || {};
+    renderStandings(lastStandings);
   });
 }
 
