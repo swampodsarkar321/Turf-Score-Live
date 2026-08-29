@@ -440,8 +440,14 @@ function renderTeamList() {
     if (!onlyUngrouped) {
       html += `<h3 style="margin:16px 0 8px; font-size:.95rem; color:var(--accent); letter-spacing:.5px;">${esc(g)}</h3>`;
     }
+    const PINNED = "rising bulls";
     html += groups[g]
-      .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+      .sort((a, b) => {
+        const ap = (a.name || "").toLowerCase() === PINNED ? 0 : 1;
+        const bp = (b.name || "").toLowerCase() === PINNED ? 0 : 1;
+        if (ap !== bp) return ap - bp;
+        return (a.name || "").localeCompare(b.name || "");
+      })
       .map((r) => {
         const logo = r.logo
           ? `<img src="${esc(r.logo)}" alt="" />`
