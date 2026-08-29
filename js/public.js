@@ -262,33 +262,60 @@ function renderUpcoming() {
     .join("");
 }
 
+// ---- knockout bracket ----------------------------------------------------
+const KO_ROUNDS = ["Quarter Final", "Semi Final", "Final", "3rd Place"];
+
+// Build the bracket inner HTML (shared by the home "Knockout Stage" section
+// and the optional "Knockout" standings display).
+function bracketInner() {
+  const ko = matchList().filter((m) => m.stage);
+  if (ko.length === 0) return "";
+  const groups = {};
+  ko.forEach((m) => { (groups[m.stage] = groups[m.stage] || []).push(m); });
+  const stages = KO_ROUNDS.filter((s) => groups[s] && groups[s].length);
+
+  return `<div class="bracket">` + stages.map((stage) => {
+    const matches = groups[stage].sort(
+      (a, b) => (a.matchNumber || 0) - (b.matchNumber || 0) ||
+                (a.scheduledTime || 0) - (b.scheduledTime || 0)
+    );
+    return `<div class="round">
+        <div class="round-title">${esc(stage)}</div>
+        ${matches.map(bracketMatchCard).join("")}
+      </div>`;
+  }).join("") + `</div>`;
+}
+
+function bracketTeamCell(id, score, win, finished) {
+  const cls = "bracket-team" + (finished && win ? " win" : finished && !win ? " lose" : "");
+  return `
+    <div class="${cls}">
+      ${teamImg(id, "")}
+      <span class="nm">${esc(teamName(id))}</span>
+      <span class="sc">${score != null && score !== "" ? esc(score) : ""}</span>
+    </div>`;
+}
+
+function bracketMatchCard(m) {
+  const finished = m.status === "Finished";
+  const aWin = finished && (Number(m.scoreA || 0) > Number(m.scoreB || 0));
+  const bWin = finished && (Number(m.scoreB || 0) > Number(m.scoreA || 0));
+  const when = m.scheduledTime ? `${formatDate(m.scheduledTime)} · ${formatTime(m.scheduledTime)}` : "TBD";
+  const meta = finished
+    ? `<div class="bracket-meta">Final ${m.scoreA || 0} - ${m.scoreB || 0}</div>`
+    : `<div class="bracket-meta">${esc(m.matchNumber ? "#" + m.matchNumber + " " : "")}${when}</div>`;
+  return `
+    <a class="bracket-match" href="match.html?m=${m.id}" style="text-decoration:none; color:inherit;">
+      ${bracketTeamCell(m.teamA, m.scoreA, aWin, finished)}
+      ${bracketTeamCell(m.teamB, m.scoreB, bWin, finished)}
+      ${meta}
+    </a>`;
+}
+
 function renderKnockout() {
   const box = document.getElementById("knockoutBox");
-  const list = matchList()
-    .filter((m) => m.stage) // only knockout rounds (Quarter/Semi/Final/3rd)
-    .sort((a, b) => (a.scheduledTime || 0) - (b.scheduledTime || 0));
-  if (list.length === 0) {
-    box.innerHTML = `<div class="empty">No knockout matches yet.</div>`;
-    return;
-  }
-  box.innerHTML = list
-    .map((m) => {
-      const when = m.scheduledTime ? `${formatDate(m.scheduledTime)} · ${formatTime(m.scheduledTime)}` : "TBD";
-      const finished = m.status === "Finished";
-      return `
-      <a class="match-item" href="match.html?m=${m.id}" style="text-decoration:none; color:inherit;">
-        <div class="teams">
-          <div class="row">${teamImg(m.teamA, "")}<span class="tname">${esc(teamName(m.teamA))}</span></div>
-          <div class="row">${teamImg(m.teamB, "")}<span class="tname">${esc(teamName(m.teamB))}</span></div>
-        </div>
-        <div class="meta">
-          ${stageBadge(m.stage)} ${statusBadge(m.status)}<br/>
-          <span>${esc(m.matchNumber ? "#" + m.matchNumber + " " : "")}${when}</span><br/>
-          <span>${finished ? `<b>${m.scoreA || 0} - ${m.scoreB || 0}</b>` : esc(m.venue || "")}</span>
-        </div>
-      </a>`;
-    })
-    .join("");
+  const html = bracketInner();
+  box.innerHTML = html || `<div class="empty">No knockout matches yet.</div>`;
 }
 
 function renderFinished() {
@@ -457,38 +484,8 @@ function renderTeamList() {
 // Knockout Bracket view (used when the tournament's Standings Display = Knockout).
 function renderKnockoutBracket() {
   const box = document.getElementById("standingsBox");
-  const order = ["Quarter Final", "Semi Final", "Final", "3rd Place"];
-  const ko = matchList().filter((m) => m.stage);
-  if (ko.length === 0) {
-    box.innerHTML = `<div class="empty">No knockout matches yet.</div>`;
-    return;
-  }
-  const groups = {};
-  ko.forEach((m) => { (groups[m.stage] = groups[m.stage] || []).push(m); });
-  const names = Object.keys(groups).sort((a, b) => order.indexOf(a) - order.indexOf(b));
-
-  let html = "";
-  names.forEach((stage) => {
-    html += `<h3 style="margin:16px 0 8px; font-size:.95rem; color:var(--accent); letter-spacing:.5px;">${esc(stage)}</h3>`;
-    html += groups[stage]
-      .sort((a, b) => (a.scheduledTime || 0) - (b.scheduledTime || 0))
-      .map((m) => {
-        const finished = m.status === "Finished";
-        return `
-        <a class="match-item" href="match.html?m=${m.id}" style="text-decoration:none; color:inherit;">
-          <div class="teams">
-            <div class="row">${teamImg(m.teamA, "")}<span class="tname">${esc(teamName(m.teamA))}</span></div>
-            <div class="row">${teamImg(m.teamB, "")}<span class="tname">${esc(teamName(m.teamB))}</span></div>
-          </div>
-          <div class="meta">
-            ${statusBadge(m.status)}<br/>
-            <span>${esc(m.matchNumber ? "#" + m.matchNumber + " " : "")}${finished ? `<b>${m.scoreA || 0} - ${m.scoreB || 0}</b>` : esc(m.venue || "")}</span>
-          </div>
-        </a>`;
-      })
-      .join("");
-  });
-  box.innerHTML = html;
+  const html = bracketInner();
+  box.innerHTML = html || `<div class="empty">No knockout matches yet.</div>`;
 }
 
 // ---- recent events -------------------------------------------------------

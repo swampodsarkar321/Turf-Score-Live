@@ -211,6 +211,49 @@ table.standings tbody tr:hover { background: rgba(37,211,102,.04); }
 .timeline .ev-text .pname { font-weight: 800; }
 .timeline .ev-text .desc { color: var(--muted); font-size: .82rem; }
 
+/* ---------- Knockout bracket ---------- */
+.bracket {
+  display: flex; gap: 48px; overflow-x: auto; padding: 6px 2px 16px;
+}
+.round {
+  flex: 1 0 220px; min-width: 210px;
+  display: flex; flex-direction: column; justify-content: space-around;
+}
+.round-title {
+  text-align: center; font-size: .7rem; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--muted); font-weight: 800; margin-bottom: 12px;
+}
+.bracket-match {
+  display: block; position: relative;
+  background: linear-gradient(180deg, var(--surface), var(--bg-2));
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 10px 12px; margin: 14px 0;
+  transition: border-color .2s, box-shadow .2s, transform .15s;
+}
+.bracket-match:hover {
+  border-color: var(--accent); transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0,0,0,.4);
+}
+.bracket-team {
+  display: flex; align-items: center; gap: 9px; padding: 6px 0;
+}
+.bracket-team + .bracket-team { border-top: 1px solid var(--border-soft); }
+.bracket-team img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; background: rgba(255,255,255,.06); }
+.bracket-team .nm { flex: 1; font-size: .86rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bracket-team .sc { font-weight: 900; font-size: .95rem; }
+.bracket-team.win .nm, .bracket-team.win .sc { color: var(--accent); }
+.bracket-team.lose { opacity: .5; }
+.bracket-meta {
+  text-align: center; font-size: .68rem; color: var(--muted);
+  margin-top: 8px; text-transform: uppercase; letter-spacing: .5px;
+}
+/* connector lines between rounds */
+.round:not(:last-child) .bracket-match::after {
+  content: ""; position: absolute; top: 50%; right: -48px;
+  width: 48px; height: 2px; background: var(--border);
+  transform: translateY(-50%);
+}
+
 /* ---------- Team list ---------- */
 .team-row {
   display: flex; align-items: center; gap: 14px;
