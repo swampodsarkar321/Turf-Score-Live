@@ -113,14 +113,36 @@ function renderMatch() {
   }
   document.getElementById("bigStatus").textContent =
     (matchData.stage ? matchData.stage + " · " : "") + (matchData.status || "Scheduled");
+  document.getElementById("matchDuration").textContent =
+    matchData.duration ? "Duration: " + matchData.duration + " min" : "";
 }
 
 function renderClocks() {
   if (!matchData) return;
-  const elapsed = Timer.computeElapsed(matchData.timer);
-  const txt = formatClock(elapsed);
-  document.getElementById("bigClock").textContent = txt;
+  const big = document.getElementById("bigClock");
   const cc = document.getElementById("ctrlClock");
+  const statusEl = document.getElementById("bigStatus");
+  let txt;
+
+  if (matchData.status === "Scheduled" && matchData.scheduledTime) {
+    // Countdown until the match starts.
+    const remain = (matchData.scheduledTime - getServerTime()) / 1000;
+    if (remain > 0) {
+      txt = formatClock(remain);
+      if (statusEl) statusEl.textContent = "Starts in";
+    } else {
+      txt = "00:00";
+      if (statusEl) statusEl.textContent = "Starting";
+    }
+  } else if (matchData.status === "Finished") {
+    txt = formatClock(Timer.computeElapsed(matchData.timer));
+    if (statusEl) statusEl.textContent = "Full Time";
+  } else {
+    // Live / Paused / Half Time -> elapsed match time.
+    txt = formatClock(Timer.computeElapsed(matchData.timer));
+  }
+
+  big.textContent = txt;
   if (cc) cc.textContent = txt;
 }
 
