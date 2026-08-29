@@ -145,6 +145,20 @@ function loadTournament(tid) {
       if (t.venue) meta.push(t.venue);
       if (t.date) meta.push(formatDate(t.date));
       document.getElementById("tourMeta").textContent = meta.join("  ·  ") || "—";
+
+      // Hero banner
+      const heroName = document.getElementById("heroName");
+      const heroMeta = document.getElementById("heroMeta");
+      const heroLogo = document.getElementById("heroLogo");
+      if (heroName) heroName.textContent = t.name || "Tournament";
+      if (heroMeta) heroMeta.textContent = meta.join("   ·   ") || "—";
+      if (heroLogo) {
+        const url = t.logo || placeholderLogo(t.name || "Tournament");
+        heroLogo.src = url;
+        heroLogo.style.display = "";
+        heroLogo.onerror = () => { heroLogo.style.display = "none"; };
+      }
+
       STANDINGS_STYLE = t.standingsStyle || "points";
       logoFromTournament(t);
     });
@@ -441,8 +455,9 @@ function renderTeamList() {
           : `<img src="${placeholderLogo(r.name)}" alt="" />`;
         const grp = r.group ? `<span class="badge stage">${esc(r.group)}</span>` : "";
         return `
-        <div class="match-item" style="cursor:default;">
-          <div class="teams"><div class="row">${logo}<span class="tname">${esc(r.name)}</span></div></div>
+        <div class="team-row">
+          <img src="${r.logo ? esc(r.logo) : placeholderLogo(r.name)}" alt="" />
+          <span class="tname">${esc(r.name)}</span>
           <div class="meta">${grp}</div>
         </div>`;
       })
@@ -525,6 +540,12 @@ function renderRecentEvents() {
 function showEmptySite() {
   document.getElementById("tourName").textContent = "No Tournament";
   document.getElementById("tourMeta").textContent = "Create a tournament in the admin panel.";
+  const heroName = document.getElementById("heroName");
+  const heroMeta = document.getElementById("heroMeta");
+  const heroLogo = document.getElementById("heroLogo");
+  if (heroName) heroName.textContent = "No Tournament";
+  if (heroMeta) heroMeta.textContent = "Create a tournament in the admin panel.";
+  if (heroLogo) heroLogo.style.display = "none";
   document.getElementById("liveNowBox").innerHTML = `<div class="no-live">No Live Match</div>`;
   document.getElementById("upcomingBox").innerHTML = `<div class="empty">Nothing scheduled.</div>`;
   document.getElementById("finishedBox").innerHTML = `<div class="empty">No matches yet.</div>`;
