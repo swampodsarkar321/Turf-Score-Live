@@ -66,6 +66,15 @@ a { color: var(--accent); text-decoration: none; }
 }
 .admin-link:hover { color: var(--text); border-color: var(--accent); }
 
+.viewer-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .76rem; font-weight: 700; color: var(--muted);
+  border: 1px solid var(--border); padding: 7px 12px; border-radius: 999px;
+  background: rgba(37,211,102,.06);
+}
+.viewer-pill .eye { font-size: .9rem; animation: blink 1.6s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
 .hero {
   position: relative; overflow: hidden;
   border: 1px solid var(--border); border-radius: var(--radius);

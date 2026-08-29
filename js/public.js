@@ -555,4 +555,44 @@ function showEmptySite() {
   document.getElementById("standingsBox").innerHTML = `<div class="empty">No standings yet.</div>`;
 }
 
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("DOMContentLoaded", () => {
+  init();
+  initViewers();
+});
+
+// ---- live viewer counter (presence) ------------------------------------
+// Each visitor registers a presence node on connect; it is auto-removed on
+// disconnect, so the count reflects people viewing right now.
+function initViewers() {
+  const el = document.getElementById("viewerCount");
+  const viewersRef = db.ref("siteViewers");
+  viewersRef.on("value", (snap) => {
+    if (el) el.textContent = snap.numChildren();
+  });
+
+  const register = () => {
+    db.ref(".info/connected").on("value", (snap) => {
+      if (snap.val() === true) {
+        const myRef = viewersRef.push();
+        myRef.onDisconnect().remove();
+        myRef.set(true);
+      }
+    });
+  };
+
+  // Anonymous auth lets unauthenticated visitors write presence
+  // (DB rules only allow writes when auth != null).
+  try {
+    const fbAuth = (typeof auth !== "undefined" && auth) || (window.firebase && firebase.auth());
+    if (fbAuth) {
+      if (fbAuth.currentUser) register();
+      else if (fbAuth.signInAnonymously) {
+        fbAuth.signInAnonymously().then(register).catch(() => register());
+      } else register();
+    } else {
+      register();
+    }
+  } catch (e) {
+    register();
+  }
+}
