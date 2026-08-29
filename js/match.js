@@ -126,6 +126,16 @@ function formatLocalTime(ms) {
   return `${d.getDate()} ${d.toLocaleString([], { month: "short" })}, ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+// Countdown formatter: shows H:MM for long waits, falling back to M:SS under an hour.
+function formatCountdown(totalSeconds) {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const p = (n) => String(n).padStart(2, "0");
+  if (h > 0) return h + ":" + p(m);
+  return formatClock(s);
+}
+
 function renderClocks() {
   if (!matchData) return;
   const big = document.getElementById("bigClock");
@@ -137,7 +147,7 @@ function renderClocks() {
     // Countdown until the match starts.
     const remain = (matchData.scheduledTime - getServerTime()) / 1000;
     if (!isNaN(remain) && remain > 0) {
-      txt = formatClock(remain);
+      txt = formatCountdown(remain);
       if (statusEl) statusEl.textContent = "Starts in";
     } else {
       txt = "00:00";
