@@ -421,48 +421,33 @@ function renderStandings(data) {
 }
 
 // Team List view (used when the tournament's Standings Display = Teams).
+// Flat list of all teams, with a pinned team (Rising Bulls) at the very top.
 function renderTeamList() {
   const box = document.getElementById("standingsBox");
-  const rows = Object.keys(teamsMap).map((k) => ({ id: k, ...teamsMap[k] }));
+  const PINNED = "rising bulls";
+  const rows = Object.keys(teamsMap)
+    .map((k) => ({ id: k, ...teamsMap[k] }))
+    .sort((a, b) => {
+      const ap = (a.name || "").toLowerCase() === PINNED ? 0 : 1;
+      const bp = (b.name || "").toLowerCase() === PINNED ? 0 : 1;
+      if (ap !== bp) return ap - bp;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
   if (rows.length === 0) {
     box.innerHTML = `<div class="empty">No teams yet.</div>`;
     return;
   }
 
-  // Group by group name if teams have one.
-  const groups = {};
-  rows.forEach((r) => { const g = r.group || ""; (groups[g] = groups[g] || []).push(r); });
-  const names = Object.keys(groups).sort((a, b) => a.localeCompare(b));
-  const onlyUngrouped = names.length === 1 && names[0] === "";
-
-  let html = "";
-  names.forEach((g) => {
-    if (!onlyUngrouped) {
-      html += `<h3 style="margin:16px 0 8px; font-size:.95rem; color:var(--accent); letter-spacing:.5px;">${esc(g)}</h3>`;
-    }
-    const PINNED = "rising bulls";
-    html += groups[g]
-      .sort((a, b) => {
-        const ap = (a.name || "").toLowerCase() === PINNED ? 0 : 1;
-        const bp = (b.name || "").toLowerCase() === PINNED ? 0 : 1;
-        if (ap !== bp) return ap - bp;
-        return (a.name || "").localeCompare(b.name || "");
-      })
-      .map((r) => {
-        const logo = r.logo
-          ? `<img src="${esc(r.logo)}" alt="" />`
-          : `<img src="${placeholderLogo(r.name)}" alt="" />`;
-        const grp = r.group ? `<span class="badge stage">${esc(r.group)}</span>` : "";
-        return `
-        <div class="team-row">
-          <img src="${r.logo ? esc(r.logo) : placeholderLogo(r.name)}" alt="" />
-          <span class="tname">${esc(r.name)}</span>
-          <div class="meta">${grp}</div>
-        </div>`;
-      })
-      .join("");
-  });
-  box.innerHTML = html;
+  box.innerHTML = rows.map((r) => {
+    const grp = r.group ? `<span class="badge stage">${esc(r.group)}</span>` : "";
+    return `
+      <div class="team-row">
+        <img src="${r.logo ? esc(r.logo) : placeholderLogo(r.name)}" alt="" />
+        <span class="tname">${esc(r.name)}</span>
+        <div class="meta">${grp}</div>
+      </div>`;
+  }).join("");
 }
 
 // Knockout Bracket view (used when the tournament's Standings Display = Knockout).
