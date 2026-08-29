@@ -113,8 +113,17 @@ function renderMatch() {
   }
   document.getElementById("bigStatus").textContent =
     (matchData.stage ? matchData.stage + " · " : "") + (matchData.status || "Scheduled");
+  const kick = matchData.scheduledTime ? "Kickoff: " + formatLocalTime(matchData.scheduledTime) : "";
   document.getElementById("matchDuration").textContent =
-    matchData.duration ? "Duration: " + matchData.duration + " min" : "";
+    (kick ? kick + (matchData.duration ? "  ·  " : "") : "") +
+    (matchData.duration ? "Duration: " + matchData.duration + " min" : "");
+}
+
+function formatLocalTime(ms) {
+  if (!ms) return "";
+  const d = new Date(ms);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getDate()} ${d.toLocaleString([], { month: "short" })}, ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 function renderClocks() {
@@ -122,12 +131,12 @@ function renderClocks() {
   const big = document.getElementById("bigClock");
   const cc = document.getElementById("ctrlClock");
   const statusEl = document.getElementById("bigStatus");
-  let txt;
+  let txt = "00:00";
 
   if (matchData.status === "Scheduled" && matchData.scheduledTime) {
     // Countdown until the match starts.
     const remain = (matchData.scheduledTime - getServerTime()) / 1000;
-    if (remain > 0) {
+    if (!isNaN(remain) && remain > 0) {
       txt = formatClock(remain);
       if (statusEl) statusEl.textContent = "Starts in";
     } else {
@@ -137,7 +146,7 @@ function renderClocks() {
   } else if (matchData.status === "Finished") {
     txt = formatClock(Timer.computeElapsed(matchData.timer));
     if (statusEl) statusEl.textContent = "Full Time";
-  } else {
+  } else if (matchData.timer) {
     // Live / Paused / Half Time -> elapsed match time.
     txt = formatClock(Timer.computeElapsed(matchData.timer));
   }
