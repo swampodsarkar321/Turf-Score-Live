@@ -126,13 +126,14 @@ function formatLocalTime(ms) {
   return `${d.getDate()} ${d.toLocaleString([], { month: "short" })}, ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-// Countdown formatter: shows H:MM for long waits, falling back to M:SS under an hour.
+// Countdown formatter: shows H:MM:SS for long waits, falling back to M:SS under an hour.
 function formatCountdown(totalSeconds) {
   const s = Math.max(0, Math.floor(totalSeconds));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
   const p = (n) => String(n).padStart(2, "0");
-  if (h > 0) return h + ":" + p(m);
+  if (h > 0) return h + ":" + p(m) + ":" + p(sec);
   return formatClock(s);
 }
 
