@@ -17,6 +17,7 @@ let tournamentsMap = {}; // tournamentId -> tournament
 let matchesMap = {};    // matchId -> match object
 let recentEvents = {};  // matchId -> [ {..., matchId} ]
 let subscribedEvents = {}; // matchId -> bool (so we only attach once)
+let STANDINGS_STYLE = "points"; // "points" (group table) or "knockout" (bracket)
 
 const EVENT_ICON = {
   Goal: "⚽", "Yellow Card": "🟨", "Red Card": "🟥",
@@ -137,15 +138,16 @@ function pickTournament(preferred) {
 }
 
 function loadTournament(tid) {
-  db.ref("tournaments/" + tid).on("value", (snap) => {
-    const t = snap.val() || {};
-    document.getElementById("tourName").textContent = t.name || "Tournament";
-    const meta = [];
-    if (t.venue) meta.push(t.venue);
-    if (t.date) meta.push(formatDate(t.date));
-    document.getElementById("tourMeta").textContent = meta.join("  ·  ") || "—";
-    logoFromTournament(t);
-  });
+    db.ref("tournaments/" + tid).on("value", (snap) => {
+      const t = snap.val() || {};
+      document.getElementById("tourName").textContent = t.name || "Tournament";
+      const meta = [];
+      if (t.venue) meta.push(t.venue);
+      if (t.date) meta.push(formatDate(t.date));
+      document.getElementById("tourMeta").textContent = meta.join("  ·  ") || "—";
+      STANDINGS_STYLE = t.standingsStyle || "points";
+      logoFromTournament(t);
+    });
 
   subscribeMatches(tid);
   subscribeStandings(tid);
@@ -320,6 +322,21 @@ function subscribeStandings(tid) {
 
 function renderStandings(data) {
   const box = document.getElementById("standingsBox");
+  const koSection = document.getElementById("knockoutSection");
+  const title = document.getElementById("standingsTitle");
+
+  // Knockout Bracket mode: render the bracket instead of the points table,
+  // and hide the separate Knockout Stage list (it would be redundant).
+  if (STANDINGS_STYLE === "knockout") {
+    if (title) title.textContent = "Knockout Bracket";
+    if (koSection) koSection.style.display = "none";
+    renderKnockoutBracket();
+    return;
+  }
+
+  if (title) title.textContent = "Standings";
+  if (koSection) koSection.style.display = "block";
+
   const rows = Object.keys(data).map((teamId) => ({ teamId, ...data[teamId] }));
   if (rows.length === 0) {
     box.innerHTML = `<div class="empty">Standings will appear after matches are created.</div>`;
@@ -384,6 +401,43 @@ function renderStandings(data) {
       html += `<h3 style="margin:18px 0 8px; font-size:.95rem; color:var(--accent); letter-spacing:.5px;">${esc(g)}</h3>`;
     }
     html += tableHTML(groups[g]);
+  });
+  box.innerHTML = html;
+}
+
+// Knockout Bracket view (used when the tournament's Standings Display = Knockout).
+function renderKnockoutBracket() {
+  const box = document.getElementById("standingsBox");
+  const order = ["Quarter Final", "Semi Final", "Final", "3rd Place"];
+  const ko = matchList().filter((m) => m.stage);
+  if (ko.length === 0) {
+    box.innerHTML = `<div class="empty">No knockout matches yet.</div>`;
+    return;
+  }
+  const groups = {};
+  ko.forEach((m) => { (groups[m.stage] = groups[m.stage] || []).push(m); });
+  const names = Object.keys(groups).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+
+  let html = "";
+  names.forEach((stage) => {
+    html += `<h3 style="margin:16px 0 8px; font-size:.95rem; color:var(--accent); letter-spacing:.5px;">${esc(stage)}</h3>`;
+    html += groups[stage]
+      .sort((a, b) => (a.scheduledTime || 0) - (b.scheduledTime || 0))
+      .map((m) => {
+        const finished = m.status === "Finished";
+        return `
+        <a class="match-item" href="match.html?m=${m.id}" style="text-decoration:none; color:inherit;">
+          <div class="teams">
+            <div class="row">${teamImg(m.teamA, "")}<span class="tname">${esc(teamName(m.teamA))}</span></div>
+            <div class="row">${teamImg(m.teamB, "")}<span class="tname">${esc(teamName(m.teamB))}</span></div>
+          </div>
+          <div class="meta">
+            ${statusBadge(m.status)}<br/>
+            <span>${esc(m.matchNumber ? "#" + m.matchNumber + " " : "")}${finished ? `<b>${m.scoreA || 0} - ${m.scoreB || 0}</b>` : esc(m.venue || "")}</span>
+          </div>
+        </a>`;
+      })
+      .join("");
   });
   box.innerHTML = html;
 }
