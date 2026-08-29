@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Turf Live Score</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header class="site-header">
+    <div class="container">
+      <div class="brand">
+        <img id="tourLogo" src="" alt="logo" style="display:none;" />
+        <div>
+          <h1 id="tourName">Turf Tournament</h1>
+          <small id="tourMeta">Loading…</small>
+        </div>
+      </div>
+      <div class="header-spacer"></div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ===== LIVE NOW ===== -->
+    <section class="section" id="liveSection">
+      <div class="section-head"><span class="bar"></span><h2>Live Now</h2></div>
+      <div id="liveNowBox"><div class="loading">Loading…</div></div>
+    </section>
+
+    <!-- ===== Upcoming ===== -->
+    <section class="section" id="upcomingSection">
+      <div class="section-head"><span class="bar"></span><h2>Upcoming Matches</h2></div>
+      <div id="upcomingBox"><div class="loading">Loading…</div></div>
+    </section>
+
+    <!-- ===== Standings ===== -->
+    <section class="section" id="standingsSection">
+      <div class="section-head"><span class="bar"></span><h2>Standings</h2></div>
+      <div class="table-wrap"><div id="standingsBox"><div class="loading">Loading…</div></div></div>
+    </section>
+
+    <!-- ===== Recent Events ===== -->
+    <section class="section" id="eventsSection">
+      <div class="section-head"><span class="bar"></span><h2>Recent Events</h2></div>
+      <ul class="timeline" id="recentEvents"><li class="empty">No events yet.</li></ul>
+    </section>
+
+    <!-- ===== Finished ===== -->
+    <section class="section" id="finishedSection">
+      <div class="section-head"><span class="bar"></span><h2>Finished Matches</h2></div>
+      <div id="finishedBox"><div class="loading">Loading…</div></div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    Powered by Turf Live Score · Real-time scores
+  </footer>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/public.js"></script>
+</body>
+</html>

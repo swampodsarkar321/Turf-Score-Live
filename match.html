@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Match — Turf Live Score</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container">
+      <div class="brand">
+        <a href="index.html" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:1.4rem;">⚽</span>
+          <div>
+            <h1 style="font-size:.95rem;">Turf Live Score</h1>
+            <small id="matchTitle">Match</small>
+          </div>
+        </a>
+      </div>
+      <div class="header-spacer"></div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ===== Public match view ===== -->
+    <section class="section">
+      <div class="card">
+        <div class="match-header">
+          <div id="liveBadge" style="text-align:center; margin-bottom:8px;"></div>
+          <div class="match-row" id="headerRow">
+            <div class="team-side">
+              <img id="teamALogo" src="" alt="" />
+              <div class="name" id="teamAName">Team A</div>
+            </div>
+            <div class="score-box">
+              <div class="score"><span id="scoreA">0</span> - <span id="scoreB">0</span></div>
+            </div>
+            <div class="team-side">
+              <img id="teamBLogo" src="" alt="" />
+              <div class="name" id="teamBName">Team B</div>
+            </div>
+          </div>
+          <div class="big-clock" id="bigClock">00:00</div>
+          <div class="big-status" id="bigStatus">Scheduled</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Events timeline ===== -->
+    <section class="section">
+      <div class="section-head"><span class="bar"></span><h2>Match Events</h2></div>
+      <ul class="timeline" id="eventList"><li class="empty">No events yet.</li></ul>
+    </section>
+
+    <!-- ===== Admin control panel (hidden unless logged in) ===== -->
+    <section class="section" id="adminPanel" style="display:none;">
+      <div class="section-head"><span class="bar"></span><h2>Live Control (Admin)</h2></div>
+
+      <div class="card control-panel">
+        <div class="control-teams">
+          <div class="team">
+            <img id="cTeamALogo" src="" alt="" />
+            <div class="nm" id="cTeamAName">Team A</div>
+            <div class="score-stepper">
+              <button class="round-btn plus" onclick="adminScore('A', 1)">+</button>
+              <span class="val" id="cScoreA">0</span>
+              <button class="round-btn minus" onclick="adminScore('A', -1)">−</button>
+            </div>
+          </div>
+          <div class="control-score"></div>
+          <div class="team">
+            <img id="cTeamBLogo" src="" alt="" />
+            <div class="nm" id="cTeamBName">Team B</div>
+            <div class="score-stepper">
+              <button class="round-btn plus" onclick="adminScore('B', 1)">+</button>
+              <span class="val" id="cScoreB">0</span>
+              <button class="round-btn minus" onclick="adminScore('B', -1)">−</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-timer">
+          <div class="clock" id="ctrlClock">00:00</div>
+          <div class="tstatus" id="ctrlStatus">Idle</div>
+        </div>
+
+        <div class="control-actions">
+          <button class="btn primary btn-xl" onclick="adminStart()">▶ Start Match</button>
+          <button class="btn btn-xl" onclick="adminPause()">⏸ Pause</button>
+          <button class="btn btn-xl" onclick="adminResume()">⏵ Resume</button>
+          <button class="btn btn-xl" onclick="adminHalfTime()">⏸ Half Time</button>
+          <button class="btn btn-xl" onclick="adminSecondHalf()">⏵ Second Half</button>
+          <button class="btn btn-xl" onclick="adminResetTimer()">↺ Reset Timer</button>
+          <button class="btn danger btn-xl" onclick="adminEnd()">🏁 End Match</button>
+          <button class="btn btn-xl" onclick="openEventModal()">＋ Add Event</button>
+        </div>
+        <p style="font-size:.75rem; color:var(--muted); margin-top:12px;">
+          Admins can also use the full dashboard at <a href="admin.html">admin.html</a>.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== Add Event Modal ===== -->
+  <div class="modal-backdrop" id="eventModal">
+    <div class="modal">
+      <span class="close" onclick="closeEventModal()">✕</span>
+      <h3>Add Match Event</h3>
+      <div class="field">
+        <label>Event Type</label>
+        <select id="evType">
+          <option>Goal</option>
+          <option>Yellow Card</option>
+          <option>Red Card</option>
+          <option>Substitution</option>
+          <option>Half Time</option>
+          <option>Second Half</option>
+          <option>Full Time</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Team</label>
+        <select id="evTeam">
+          <option value="A" id="optTeamA">Team A</option>
+          <option value="B" id="optTeamB">Team B</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Player Name</label>
+        <input id="evPlayer" placeholder="e.g. Rahim" />
+      </div>
+      <div class="field">
+        <label>Match Minute</label>
+        <input id="evMinute" type="number" min="0" placeholder="e.g. 18" />
+      </div>
+      <div class="field">
+        <label>Description (optional)</label>
+        <textarea id="evDesc" placeholder="optional notes"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="closeEventModal()">Cancel</button>
+        <button class="btn primary" onclick="saveEvent()">Save Event</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/match.js"></script>
+</body>
+</html>
