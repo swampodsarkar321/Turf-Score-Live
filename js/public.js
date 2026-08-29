@@ -19,6 +19,7 @@ let recentEvents = {};  // matchId -> [ {..., matchId} ]
 let subscribedEvents = {}; // matchId -> bool (so we only attach once)
 let STANDINGS_STYLE = "points"; // "points" (group table) or "knockout" (bracket)
 let lastStandings = {};         // last standings payload (for re-render on team load)
+let urlTourOverride = null;     // ?t= URL param, if present disables auto tournament switch
 
 const EVENT_ICON = {
   Goal: "⚽", "Yellow Card": "🟨", "Red Card": "🟥",
@@ -93,73 +94,103 @@ function logoFromTournament(t) {
 // ---- bootstrap -----------------------------------------------------------
 
 function init() {
-  // Determine which tournament to display.
-  // Priority: ?t= URL param > settings/currentTournament > first tournament.
   const params = new URLSearchParams(location.search);
   const urlTour = params.get("t");
+  urlTourOverride = urlTour;
 
-  // Keep an eye on all tournaments (for fallback) and the chosen one.
-  db.ref("tournaments").on("value", (snap) => {
-    tournamentsMap = snap.val() || {};
-    if (!CURRENT_TOURNAMENT) pickTournament(urlTour);
-  });
+  // Load everything in ONE parallel batch (multiplexed over the open socket),
+  // then render a single time. This removes the old sequential chain
+  // (tournaments -> settings -> matches -> standings -> teams) that made the
+  // page appear piece-by-piece and feel slow.
+  Promise.all([
+    db.ref("tournaments").once("value"),
+    db.ref("settings/currentTournament").once("value"),
+    db.ref("teams").once("value"),
+    db.ref("matches").once("value"),
+    db.ref("standings").once("value"),
+  ])
+    .then(([tSnap, curSnap, teamsSnap, mSnap, sSnap]) => {
+      tournamentsMap = tSnap.val() || {};
+      teamsMap = teamsSnap.val() || {};
 
-  db.ref("settings/currentTournament").on("value", (snap) => {
-    const cur = snap.val();
-    if (!CURRENT_TOURNAMENT && cur) {
-      CURRENT_TOURNAMENT = cur;
-      loadTournament(cur);
-    } else if (!CURRENT_TOURNAMENT) {
-      pickTournament(urlTour);
-    }
-  });
+      const cur = curSnap.val();
+      let tid =
+        (urlTour && tournamentsMap[urlTour]) ? urlTour :
+        (cur && tournamentsMap[cur]) ? cur :
+        (Object.keys(tournamentsMap).find((k) => tournamentsMap[k].status === "Live")) ||
+        Object.keys(tournamentsMap)[0];
 
-  // Teams are needed for names/logos everywhere.
-  db.ref("teams").on("value", (snap) => {
-    teamsMap = snap.val() || {};
-    if (CURRENT_TOURNAMENT) renderAll();
-  });
-}
+      if (!tid) { showEmptySite(); return; }
+      CURRENT_TOURNAMENT = tid;
 
-function pickTournament(preferred) {
-  if (preferred && tournamentsMap[preferred]) {
-    CURRENT_TOURNAMENT = preferred;
-    loadTournament(preferred);
-    return;
-  }
-  const keys = Object.keys(tournamentsMap);
-  if (keys.length === 0) {
-    showEmptySite();
-    return;
-  }
-  // Prefer a tournament marked "Live", else the first one.
-  let chosen = keys.find((k) => tournamentsMap[k].status === "Live") || keys[0];
-  CURRENT_TOURNAMENT = chosen;
-  loadTournament(chosen);
-}
-
-function loadTournament(tid) {
-    db.ref("tournaments/" + tid).on("value", (snap) => {
-      const t = snap.val() || {};
+      const t = tournamentsMap[tid] || {};
+      STANDINGS_STYLE = t.standingsStyle || "points";
       document.getElementById("tourName").textContent = t.name || "Tournament";
       const meta = [];
       if (t.venue) meta.push(t.venue);
       if (t.date) meta.push(formatDate(t.date));
       document.getElementById("tourMeta").textContent = meta.join("  ·  ") || "—";
-
-      STANDINGS_STYLE = t.standingsStyle || "points";
       logoFromTournament(t);
-      renderStandings(lastStandings); // re-render in case style switched
+
+      // Matches for this tournament only.
+      const allM = mSnap.val() || {};
+      matchesMap = {};
+      Object.keys(allM).forEach((k) => {
+        if (allM[k].tournamentId === tid) matchesMap[k] = allM[k];
+      });
+
+      // Standings + recent events for this tournament.
+      lastStandings = (sSnap.val() || {})[tid] || {};
+      recentEvents = {};
+      Object.keys(matchesMap).forEach((mid) => {
+        const evs = matchesMap[mid].events || {};
+        recentEvents[mid] = Object.keys(evs).map((k) => ({ id: k, matchId: mid, ...evs[k] }));
+      });
+
+      // Single initial paint.
+      renderAll();
+      renderStandings(lastStandings);
+
+      // Then keep everything live.
+      attachLive(tid);
+    })
+    .catch((e) => console.error("initial load failed", e));
+}
+
+// Keep data live after the initial paint.
+function attachLive(tid) {
+  db.ref("tournaments").on("value", (snap) => { tournamentsMap = snap.val() || {}; });
+
+  db.ref("settings/currentTournament").on("value", (snap) => {
+    const cur = snap.val();
+    // Re-load only when the admin actually switches the current tournament
+    // (and not when the ?t= URL param is driving the view).
+    if (!urlTourOverride && cur && cur !== CURRENT_TOURNAMENT && tournamentsMap[cur]) {
+      CURRENT_TOURNAMENT = cur;
+      location.reload();
+    }
+  });
+
+  db.ref("teams").on("value", (snap) => {
+    teamsMap = snap.val() || {};
+    renderAll();
+  });
+
+  db.ref("matches")
+    .orderByChild("tournamentId")
+    .equalTo(tid)
+    .on("value", (snap) => {
+      matchesMap = snap.val() || {};
+      Object.keys(matchesMap).forEach((mid) => subscribeMatchEvents(mid));
+      renderAll();
     });
 
-  subscribeMatches(tid);
-  subscribeStandings(tid);
+  db.ref("standings/" + tid).on("value", (snap) => {
+    lastStandings = snap.val() || {};
+    renderStandings(lastStandings);
+  });
 
-  // Tick the LIVE NOW clock.
   Timer.startTicking(() => renderLiveNow());
-
-  // (Admin access is intentionally NOT shown on the public site — the admin
-  // panel lives at login.html / admin.html as a separate page.)
 }
 
 // ---- matches -------------------------------------------------------------
@@ -343,13 +374,6 @@ function renderFinished() {
 }
 
 // ---- standings -----------------------------------------------------------
-
-function subscribeStandings(tid) {
-  db.ref("standings/" + tid).on("value", (snap) => {
-    lastStandings = snap.val() || {};
-    renderStandings(lastStandings);
-  });
-}
 
 function renderStandings(data) {
   const box = document.getElementById("standingsBox");
