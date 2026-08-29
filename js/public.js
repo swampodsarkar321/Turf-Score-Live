@@ -433,16 +433,20 @@ function renderTeamList() {
     if (!onlyUngrouped) {
       html += `<h3 style="margin:16px 0 8px; font-size:.95rem; color:var(--accent); letter-spacing:.5px;">${esc(g)}</h3>`;
     }
-    html += `<div class="card-list">` + groups[g].map((r) => {
-      const logo = r.logo
-        ? `<img src="${esc(r.logo)}" alt="" />`
-        : `<img src="${placeholderLogo(r.name)}" alt="" />`;
-      return `
-        <div class="mini-card">
-          <div class="head">${logo}<b>${esc(r.name)}</b></div>
-          <div class="sub">${(r.players || []).length} player(s)</div>
+    html += groups[g]
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+      .map((r) => {
+        const logo = r.logo
+          ? `<img src="${esc(r.logo)}" alt="" />`
+          : `<img src="${placeholderLogo(r.name)}" alt="" />`;
+        const grp = r.group ? `<span class="badge stage">${esc(r.group)}</span>` : "";
+        return `
+        <div class="match-item" style="cursor:default;">
+          <div class="teams"><div class="row">${logo}<span class="tname">${esc(r.name)}</span></div></div>
+          <div class="meta">${grp}</div>
         </div>`;
-    }).join("") + `</div>`;
+      })
+      .join("");
   });
   box.innerHTML = html;
 }
