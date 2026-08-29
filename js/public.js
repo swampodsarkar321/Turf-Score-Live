@@ -146,19 +146,6 @@ function loadTournament(tid) {
       if (t.date) meta.push(formatDate(t.date));
       document.getElementById("tourMeta").textContent = meta.join("  ·  ") || "—";
 
-      // Hero banner
-      const heroName = document.getElementById("heroName");
-      const heroMeta = document.getElementById("heroMeta");
-      const heroLogo = document.getElementById("heroLogo");
-      if (heroName) heroName.textContent = t.name || "Tournament";
-      if (heroMeta) heroMeta.textContent = meta.join("   ·   ") || "—";
-      if (heroLogo) {
-        const url = t.logo || placeholderLogo(t.name || "Tournament");
-        heroLogo.src = url;
-        heroLogo.style.display = "";
-        heroLogo.onerror = () => { heroLogo.style.display = "none"; };
-      }
-
       STANDINGS_STYLE = t.standingsStyle || "points";
       logoFromTournament(t);
     });
@@ -540,12 +527,6 @@ function renderRecentEvents() {
 function showEmptySite() {
   document.getElementById("tourName").textContent = "No Tournament";
   document.getElementById("tourMeta").textContent = "Create a tournament in the admin panel.";
-  const heroName = document.getElementById("heroName");
-  const heroMeta = document.getElementById("heroMeta");
-  const heroLogo = document.getElementById("heroLogo");
-  if (heroName) heroName.textContent = "No Tournament";
-  if (heroMeta) heroMeta.textContent = "Create a tournament in the admin panel.";
-  if (heroLogo) heroLogo.style.display = "none";
   document.getElementById("liveNowBox").innerHTML = `<div class="no-live">No Live Match</div>`;
   document.getElementById("upcomingBox").innerHTML = `<div class="empty">Nothing scheduled.</div>`;
   document.getElementById("finishedBox").innerHTML = `<div class="empty">No matches yet.</div>`;
